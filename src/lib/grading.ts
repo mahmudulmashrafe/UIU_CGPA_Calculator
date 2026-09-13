@@ -17,7 +17,7 @@ export const CREDIT_OPTIONS = [1, 1.5, 2, 3, 4] as const;
 
 export interface Course {
   id: string;
-  code: string;
+  code?: string;
   name: string;
   credit: number;
   grade: string;
@@ -69,29 +69,69 @@ export function calculateSemesterGPA(courses: Course[]): { gpa: number; totalCre
   };
 }
 
-export function calculateCGPA(semesters: Semester[]): { cgpa: number; totalCredits: number } {
+export function calculateCGPA(semesters: Semester[]): { cgpa: number; totalCredits: number; totalPoints: number } {
   let totalCredits = 0;
   let totalPoints = 0;
 
   for (const semester of semesters) {
     for (const course of semester.courses) {
       if (!course.grade) continue;
-      const point = getGradePoint(course.grade);
-      totalCredits += course.credit;
-      totalPoints += point * course.credit;
+      const newPoint = getGradePoint(course.grade);
+
+      if (course.isRetake && course.previousGrade) {
+        const prevPoint = getGradePoint(course.previousGrade);
+        totalPoints += (newPoint - prevPoint) * course.credit;
+      } else {
+        totalCredits += course.credit;
+        totalPoints += newPoint * course.credit;
+      }
     }
   }
 
   return {
     cgpa: totalCredits > 0 ? totalPoints / totalCredits : 0,
     totalCredits,
+    totalPoints,
+  };
+}
+
+export function calculateCombinedCGPA(
+  priorCgpa: number,
+  priorCredits: number,
+  semesters: Semester[]
+): { newCgpa: number; newTotalCredits: number; netSemesterPoints: number } {
+  let netCreditsAdded = 0;
+  let netPointsAdded = 0;
+
+  for (const semester of semesters) {
+    for (const course of semester.courses) {
+      if (!course.grade) continue;
+      const newPoint = getGradePoint(course.grade);
+
+      if (course.isRetake && course.previousGrade) {
+        const prevPoint = getGradePoint(course.previousGrade);
+        netPointsAdded += (newPoint - prevPoint) * course.credit;
+      } else {
+        netCreditsAdded += course.credit;
+        netPointsAdded += newPoint * course.credit;
+      }
+    }
+  }
+
+  const priorPoints = priorCgpa * priorCredits;
+  const finalTotalPoints = priorPoints + netPointsAdded;
+  const finalTotalCredits = priorCredits + netCreditsAdded;
+
+  return {
+    newCgpa: finalTotalCredits > 0 ? finalTotalPoints / finalTotalCredits : 0,
+    newTotalCredits: finalTotalCredits,
+    netSemesterPoints: netPointsAdded,
   };
 }
 
 export function createCourse(partialName = ""): Course {
   return {
     id: crypto.randomUUID(),
-    code: "",
     name: partialName,
     credit: 3,
     grade: "",
@@ -107,3 +147,4 @@ export function createSemester(index: number): Semester {
     courses: [createCourse(), createCourse(), createCourse()],
   };
 }
+

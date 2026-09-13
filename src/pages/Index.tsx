@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Semester, createSemester, calculateSemesterGPA, calculateCGPA } from "@/lib/grading";
+import { Semester, createSemester, calculateSemesterGPA, calculateCGPA, calculateCombinedCGPA } from "@/lib/grading";
 import { SemesterCard } from "@/components/SemesterCard";
 import { CGPADisplay } from "@/components/CGPADisplay";
 import { Button } from "@/components/ui/button";
@@ -66,11 +66,11 @@ const Index = () => {
   const singleGpa = calculateSemesterGPA(singleSemester.courses);
   const priorCgpaNum = parseFloat(priorCgpa) || 0;
   const priorCreditsNum = parseFloat(priorCredits) || 0;
-  const newTotalCredits = priorCreditsNum + singleGpa.totalCredits;
-  const newCgpa =
-    newTotalCredits > 0
-      ? (priorCgpaNum * priorCreditsNum + singleGpa.totalPoints) / newTotalCredits
-      : 0;
+
+  const combinedSingle = calculateCombinedCGPA(priorCgpaNum, priorCreditsNum, [singleSemester]);
+  const newTotalCredits = combinedSingle.newTotalCredits;
+  const newCgpa = combinedSingle.newCgpa;
+  const hasActiveSingleCourses = singleSemester.courses.some((c) => Boolean(c.grade));
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -92,59 +92,19 @@ const Index = () => {
       {/* Main content */}
       <main className="container max-w-7xl mx-auto px-4 py-6 flex-1">
         <Tabs defaultValue="single" className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="single">Single Semester</TabsTrigger>
-            <TabsTrigger value="future">Future CGPA</TabsTrigger>
-            <TabsTrigger value="full">Full CGPA Calculator</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-1 mb-6">
+            <TabsList className="w-full sm:w-auto inline-flex">
+              <TabsTrigger value="single" className="text-xs sm:text-sm">Single Semester</TabsTrigger>
+              <TabsTrigger value="future" className="text-xs sm:text-sm">Future CGPA</TabsTrigger>
+              <TabsTrigger value="full" className="text-xs sm:text-sm">Full CGPA Calculator</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Single Semester Tab */}
           <TabsContent value="single">
             <div className="flex flex-col lg:flex-row gap-6">
-              <div className="flex-1 space-y-4 min-w-0">
-                {/* Prior CGPA inputs */}
-                <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Your Current Standing</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Current CGPA</label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="4"
-                        placeholder="e.g. 3.50"
-                        value={priorCgpa}
-                        onChange={(e) => setPriorCgpa(e.target.value)}
-                        className="h-10"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Credits Completed</label>
-                      <Input
-                        type="number"
-                        step="1"
-                        min="0"
-                        placeholder="e.g. 90"
-                        value={priorCredits}
-                        onChange={(e) => setPriorCredits(e.target.value)}
-                        className="h-10"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Semester courses */}
-                <SemesterCard
-                  semester={singleSemester}
-                  onChange={setSingleSemester}
-                  onRemove={resetSingle}
-                  readOnlyName={true}
-                />
-              </div>
-
-              {/* Result */}
-              <div className="w-full lg:w-72 shrink-0">
+              {/* Result Summary Box (Top on mobile, sidebar on desktop) */}
+              <div className="w-full lg:w-72 shrink-0 order-first lg:order-last">
                 <div className="flex justify-end mb-2">
                   <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={resetSingle}>
                     <RotateCcw className="h-3.5 w-3.5 mr-1" /> Reset
@@ -187,11 +147,11 @@ const Index = () => {
                     </Popover>
                   </div>
                   <div className="text-center mb-4">
-                    <div className={`text-5xl font-bold tabular-nums ${singleGpa.totalCredits > 0 ? "text-primary" : "text-muted-foreground/30"}`}>
-                      {singleGpa.totalCredits > 0 ? newCgpa.toFixed(2) : "0.00"}
+                    <div className={`text-5xl font-bold tabular-nums ${hasActiveSingleCourses || priorCgpaNum > 0 ? "text-primary" : "text-muted-foreground/30"}`}>
+                      {hasActiveSingleCourses || priorCgpaNum > 0 ? newCgpa.toFixed(2) : "0.00"}
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {singleGpa.totalCredits > 0 ? "After this semester" : "Add courses to calculate"}
+                      {hasActiveSingleCourses || priorCgpaNum > 0 ? "After this semester" : "Add courses to calculate"}
                     </div>
                   </div>
 
@@ -215,7 +175,7 @@ const Index = () => {
                     </div>
                   </div>
 
-                  {priorCgpaNum > 0 && singleGpa.totalCredits > 0 && (
+                  {priorCgpaNum > 0 && hasActiveSingleCourses && (
                     <div className="mt-4 pt-4 border-t border-border/60 text-center">
                       <p className="text-xs text-muted-foreground">
                         Change:{" "}
@@ -228,17 +188,12 @@ const Index = () => {
                   )}
                 </div>
               </div>
-            </div>
-          </TabsContent>
 
-          {/* Future CGPA Tab */}
-          <TabsContent value="future">
-            <div className="flex flex-col lg:flex-row gap-6">
               <div className="flex-1 space-y-4 min-w-0">
                 {/* Prior CGPA inputs */}
                 <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
                   <h3 className="text-sm font-semibold text-foreground mb-3">Your Current Standing</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-medium text-muted-foreground mb-1 block">Current CGPA</label>
                       <Input
@@ -247,9 +202,9 @@ const Index = () => {
                         min="0"
                         max="4"
                         placeholder="e.g. 3.50"
-                        value={futurePriorCgpa}
-                        onChange={(e) => setFuturePriorCgpa(e.target.value)}
-                        className="h-10"
+                        value={priorCgpa}
+                        onChange={(e) => setPriorCgpa(e.target.value)}
+                        className="h-10 text-sm"
                       />
                     </div>
                     <div>
@@ -259,32 +214,30 @@ const Index = () => {
                         step="1"
                         min="0"
                         placeholder="e.g. 90"
-                        value={futurePriorCredits}
-                        onChange={(e) => setFuturePriorCredits(e.target.value)}
-                        className="h-10"
+                        value={priorCredits}
+                        onChange={(e) => setPriorCredits(e.target.value)}
+                        className="h-10 text-sm"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Future semesters */}
-                {futureSemesters.map((semester, i) => (
-                  <SemesterCard
-                    key={semester.id}
-                    semester={semester}
-                    onChange={(s) => updateFutureSemester(i, s)}
-                    onRemove={() => removeFutureSemester(i)}
-                  />
-                ))}
-                <Button
-                  variant="outline"
-                  className="w-full border-dashed h-12 text-muted-foreground hover:text-primary hover:border-primary/50"
-                  onClick={addFutureSemester}
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Add Semester
-                </Button>
+                {/* Semester courses */}
+                <SemesterCard
+                  semester={singleSemester}
+                  onChange={setSingleSemester}
+                  onRemove={resetSingle}
+                  readOnlyName={true}
+                />
               </div>
-              <div className="w-full lg:w-72 shrink-0">
+            </div>
+          </TabsContent>
+
+          {/* Future CGPA Tab */}
+          <TabsContent value="future">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Result Summary Box (Top on mobile, sidebar on desktop) */}
+              <div className="w-full lg:w-72 shrink-0 order-first lg:order-last">
                 <div className="flex justify-end mb-2">
                   <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={resetFuture}>
                     <RotateCcw className="h-3.5 w-3.5 mr-1" /> Reset
@@ -333,12 +286,73 @@ const Index = () => {
                   />
                 </div>
               </div>
+
+              <div className="flex-1 space-y-4 min-w-0">
+                {/* Prior CGPA inputs */}
+                <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">Your Current Standing</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Current CGPA</label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="4"
+                        placeholder="e.g. 3.50"
+                        value={futurePriorCgpa}
+                        onChange={(e) => setFuturePriorCgpa(e.target.value)}
+                        className="h-10 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Credits Completed</label>
+                      <Input
+                        type="number"
+                        step="1"
+                        min="0"
+                        placeholder="e.g. 90"
+                        value={futurePriorCredits}
+                        onChange={(e) => setFuturePriorCredits(e.target.value)}
+                        className="h-10 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Future semesters */}
+                {futureSemesters.map((semester, i) => (
+                  <SemesterCard
+                    key={semester.id}
+                    semester={semester}
+                    onChange={(s) => updateFutureSemester(i, s)}
+                    onRemove={() => removeFutureSemester(i)}
+                  />
+                ))}
+                <Button
+                  variant="outline"
+                  className="w-full border-dashed h-12 text-muted-foreground hover:text-primary hover:border-primary/50"
+                  onClick={addFutureSemester}
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add Semester
+                </Button>
+              </div>
             </div>
           </TabsContent>
 
           {/* Full Calculator Tab */}
           <TabsContent value="full">
             <div className="flex flex-col lg:flex-row gap-6">
+              {/* Result Summary Box (Top on mobile, sidebar on desktop) */}
+              <div className="w-full lg:w-72 shrink-0 order-first lg:order-last">
+                <div className="flex justify-end mb-2">
+                  <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={resetAll}>
+                    <RotateCcw className="h-3.5 w-3.5 mr-1" /> Reset
+                  </Button>
+                </div>
+                <CGPADisplay semesters={semesters} />
+              </div>
+
               <div className="flex-1 space-y-4 min-w-0">
                 {semesters.map((semester, i) => (
                   <SemesterCard
@@ -355,14 +369,6 @@ const Index = () => {
                 >
                   <Plus className="h-4 w-4 mr-2" /> Add Semester
                 </Button>
-              </div>
-              <div className="w-full lg:w-72 shrink-0">
-                <div className="flex justify-end mb-2">
-                  <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={resetAll}>
-                    <RotateCcw className="h-3.5 w-3.5 mr-1" /> Reset
-                  </Button>
-                </div>
-                <CGPADisplay semesters={semesters} />
               </div>
             </div>
           </TabsContent>
@@ -394,20 +400,19 @@ interface FutureCGPADisplayProps {
 
 function FutureCGPADisplay({ semesters, priorCgpa, priorCredits }: FutureCGPADisplayProps) {
   const totalGpaData = calculateCGPA(semesters);
-  const newTotalCredits = priorCredits + totalGpaData.totalCredits;
-  const newCgpa =
-    newTotalCredits > 0
-      ? (priorCgpa * priorCredits + totalGpaData.totalPoints) / newTotalCredits
-      : 0;
+  const combined = calculateCombinedCGPA(priorCgpa, priorCredits, semesters);
+  const newTotalCredits = combined.newTotalCredits;
+  const newCgpa = combined.newCgpa;
+  const hasActiveCourses = semesters.some((s) => s.courses.some((c) => Boolean(c.grade)));
 
   return (
     <div>
       <div className="text-center mb-4">
-        <div className={`text-5xl font-bold tabular-nums ${totalGpaData.totalCredits > 0 ? "text-primary" : "text-muted-foreground/30"}`}>
-          {totalGpaData.totalCredits > 0 ? newCgpa.toFixed(2) : "0.00"}
+        <div className={`text-5xl font-bold tabular-nums ${hasActiveCourses || priorCgpa > 0 ? "text-primary" : "text-muted-foreground/30"}`}>
+          {hasActiveCourses || priorCgpa > 0 ? newCgpa.toFixed(2) : "0.00"}
         </div>
         <div className="text-sm text-muted-foreground mt-1">
-          {totalGpaData.totalCredits > 0 ? "After all semesters" : "Add courses to calculate"}
+          {hasActiveCourses || priorCgpa > 0 ? "After all semesters" : "Add courses to calculate"}
         </div>
       </div>
 
@@ -420,7 +425,7 @@ function FutureCGPADisplay({ semesters, priorCgpa, priorCredits }: FutureCGPADis
 
       <div className="grid grid-cols-2 gap-3 text-center">
         <div className="p-3 rounded-xl bg-secondary/50">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Total GPA</p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Semester GPA</p>
           <p className="text-xl font-bold text-foreground">
             {totalGpaData.totalCredits > 0 ? totalGpaData.cgpa.toFixed(2) : "—"}
           </p>
@@ -431,7 +436,7 @@ function FutureCGPADisplay({ semesters, priorCgpa, priorCredits }: FutureCGPADis
         </div>
       </div>
 
-      {priorCgpa > 0 && totalGpaData.totalCredits > 0 && (
+      {priorCgpa > 0 && hasActiveCourses && (
         <div className="mt-4 pt-4 border-t border-border/60 text-center">
           <p className="text-xs text-muted-foreground">
             Change:{" "}
@@ -447,3 +452,4 @@ function FutureCGPADisplay({ semesters, priorCgpa, priorCredits }: FutureCGPADis
 }
 
 export default Index;
+
