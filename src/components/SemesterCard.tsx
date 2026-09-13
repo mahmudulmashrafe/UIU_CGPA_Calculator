@@ -64,19 +64,7 @@ export function SemesterCard({ semester, onChange, onRemove, readOnlyName = fals
         </div>
       </CardHeader>
 
-      <CardContent className="p-3 space-y-1.5">
-        {/* Header row for Desktop */}
-        <div className="hidden md:grid md:grid-cols-[1fr_5rem_4.5rem_6rem_4.5rem_8.5rem_3.5rem_2rem] items-center gap-2 py-2 px-3">
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase">COURSE</span>
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase text-center">CREDIT</span>
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase text-center">MARKS</span>
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase text-center">GRADE</span>
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase text-center">RETAKE</span>
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase text-center">PREVIOUS GRADE</span>
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase text-center">GP</span>
-          <span></span>
-        </div>
-
+      <CardContent className="p-3 space-y-2.5">
         {semester.courses.map((course, i) => (
           <CourseRow
             key={course.id}
