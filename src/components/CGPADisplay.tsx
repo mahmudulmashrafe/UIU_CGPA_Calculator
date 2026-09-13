@@ -29,7 +29,7 @@ export function CGPADisplay({ semesters }: CGPADisplayProps) {
   const hasData = totalCredits > 0;
 
   return (
-    <div className="rounded-2xl bg-card border border-border/60 p-6 shadow-sm sticky top-20">
+    <div className="rounded-2xl bg-card border border-border/60 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Cumulative GPA
