@@ -144,7 +144,7 @@ export function createSemester(index: number): Semester {
   return {
     id: crypto.randomUUID(),
     name: `Semester ${index}`,
-    courses: [createCourse(), createCourse(), createCourse()],
+    courses: [createCourse(), createCourse()],
   };
 }
 
