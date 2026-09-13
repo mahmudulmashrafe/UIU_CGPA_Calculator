@@ -14,21 +14,38 @@ interface CourseRowProps {
   onRemove: () => void;
 }
 
-function GradeSelector({ course, onChange }: { course: Course; onChange: (course: Course) => void }) {
+interface GradeSelectorPopoverProps {
+  value: string;
+  score?: number;
+  placeholder: string;
+  borderStyle?: string;
+  onSelect: (grade: string, score?: number) => void;
+}
+
+function GradeSelectorPopover({
+  value,
+  score,
+  placeholder,
+  borderStyle = "",
+  onSelect,
+}: GradeSelectorPopoverProps) {
   const [open, setOpen] = useState(false);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="h-8 w-full justify-between text-xs px-2.5 font-normal border-border/60 bg-background">
+        <Button
+          variant="outline"
+          className={`h-8 w-full justify-between text-xs px-2.5 font-normal border-border/60 bg-background ${borderStyle}`}
+        >
           <span className="truncate font-medium">
-            {course.grade ? `${course.grade} (${getGradePoint(course.grade).toFixed(2)})` : "Select Grade"}
+            {value ? `${value} (${getGradePoint(value).toFixed(2)})` : placeholder}
           </span>
           <span className="text-[10px] text-muted-foreground ml-1">▾</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2.5" align="start">
-        <div className="mb-2 pb-2 border-b border-border/60">
+      <PopoverContent className="w-52 p-2.5" align="start">
+        <div className="mb-2 pb-2 border-b border-border/60 text-center">
           <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
             Or Enter Marks (0-100)
           </label>
@@ -37,13 +54,18 @@ function GradeSelector({ course, onChange }: { course: Course; onChange: (course
             placeholder="e.g. 85"
             min="0"
             max="100"
-            value={course.score !== undefined ? course.score : ""}
+            value={score !== undefined ? score : ""}
             onChange={(e) => {
-              const score = e.target.value !== "" ? parseFloat(e.target.value) : undefined;
-              const newGrade = score !== undefined ? getGradeFromScore(score) : "";
-              onChange({ ...course, score, grade: newGrade });
+              const val = e.target.value !== "" ? parseFloat(e.target.value) : undefined;
+              const newGrade = val !== undefined ? getGradeFromScore(val) : "";
+              onSelect(newGrade, val);
             }}
-            className="h-8 text-xs text-center border-border/60"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setOpen(false);
+              }
+            }}
+            className="h-7 w-24 mx-auto text-xs text-center border-border/60"
           />
         </div>
 
@@ -51,10 +73,10 @@ function GradeSelector({ course, onChange }: { course: Course; onChange: (course
           <button
             type="button"
             onClick={() => {
-              onChange({ ...course, grade: "", score: undefined });
+              onSelect("", undefined);
               setOpen(false);
             }}
-            className={`w-full text-left px-2 py-1 rounded text-xs hover:bg-secondary flex justify-between items-center transition-colors ${!course.grade ? "font-bold bg-secondary/80" : ""}`}
+            className={`w-full text-left px-2 py-1 rounded text-xs hover:bg-secondary flex justify-between items-center transition-colors ${!value ? "font-bold bg-secondary/80" : ""}`}
           >
             <span className="text-muted-foreground">-- None --</span>
           </button>
@@ -63,13 +85,13 @@ function GradeSelector({ course, onChange }: { course: Course; onChange: (course
               type="button"
               key={g.label}
               onClick={() => {
-                onChange({ ...course, grade: g.label, score: undefined });
+                onSelect(g.label, undefined);
                 setOpen(false);
               }}
-              className={`w-full text-left px-2 py-1 rounded text-xs hover:bg-secondary flex justify-between items-center transition-colors ${course.grade === g.label ? "font-bold bg-secondary/80 text-primary" : ""}`}
+              className={`w-full text-left px-2 py-1 rounded hover:bg-secondary flex justify-between items-center transition-colors ${value === g.label ? "bg-secondary/80 text-primary font-bold" : ""}`}
             >
-              <span className="font-semibold">{g.label}</span>
-              <span className="text-[10px] text-muted-foreground">{g.point.toFixed(2)} pts</span>
+              <span className="text-base font-bold">{g.label}</span>
+              <span className="text-[11px] text-muted-foreground">{g.point.toFixed(2)} pts</span>
             </button>
           ))}
         </div>
@@ -129,7 +151,12 @@ export function CourseRow({ course, index, onChange, onRemove }: CourseRowProps)
 
           <div>
             <label className="text-[10px] font-medium text-muted-foreground block mb-1">Grade</label>
-            <GradeSelector course={course} onChange={onChange} />
+            <GradeSelectorPopover
+              value={course.grade}
+              score={course.score}
+              placeholder="Select Grade"
+              onSelect={(grade, score) => onChange({ ...course, grade, score })}
+            />
           </div>
         </div>
 
@@ -138,28 +165,26 @@ export function CourseRow({ course, index, onChange, onRemove }: CourseRowProps)
             <label className="text-[10px] font-medium text-muted-foreground">Retake</label>
             <Switch
               checked={course.isRetake}
-              onCheckedChange={(v) => onChange({ ...course, isRetake: v, previousGrade: v ? course.previousGrade : "" })}
+              onCheckedChange={(v) =>
+                onChange({
+                  ...course,
+                  isRetake: v,
+                  previousGrade: v ? course.previousGrade : "",
+                  previousScore: v ? course.previousScore : undefined,
+                })
+              }
               className="scale-75"
             />
           </div>
 
           {course.isRetake ? (
-            <Select
-              value={course.previousGrade || "none"}
-              onValueChange={(v) => onChange({ ...course, previousGrade: v === "none" ? "" : v })}
-            >
-              <SelectTrigger className="h-8 text-xs border-dashed">
-                <SelectValue placeholder="Previous Grade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Previous Grade</SelectItem>
-                {GRADES.map((g) => (
-                  <SelectItem key={g.label} value={g.label}>
-                    {g.label} ({g.point.toFixed(2)})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <GradeSelectorPopover
+              value={course.previousGrade}
+              score={course.previousScore}
+              placeholder="Previous Grade"
+              borderStyle="border-dashed"
+              onSelect={(previousGrade, previousScore) => onChange({ ...course, previousGrade, previousScore })}
+            />
           ) : (
             <div className="h-8 flex items-center text-xs text-muted-foreground px-2">—</div>
           )}
@@ -210,7 +235,12 @@ export function CourseRow({ course, index, onChange, onRemove }: CourseRowProps)
 
           <div>
             <label className="text-[10px] font-medium text-muted-foreground block mb-1">Grade</label>
-            <GradeSelector course={course} onChange={onChange} />
+            <GradeSelectorPopover
+              value={course.grade}
+              score={course.score}
+              placeholder="Select Grade"
+              onSelect={(grade, score) => onChange({ ...course, grade, score })}
+            />
           </div>
 
           <div className="col-span-2">
@@ -218,28 +248,26 @@ export function CourseRow({ course, index, onChange, onRemove }: CourseRowProps)
               <label className="text-[10px] font-medium text-muted-foreground">Retake</label>
               <Switch
                 checked={course.isRetake}
-                onCheckedChange={(v) => onChange({ ...course, isRetake: v, previousGrade: v ? course.previousGrade : "" })}
+                onCheckedChange={(v) =>
+                  onChange({
+                    ...course,
+                    isRetake: v,
+                    previousGrade: v ? course.previousGrade : "",
+                    previousScore: v ? course.previousScore : undefined,
+                  })
+                }
                 className="scale-75"
               />
             </div>
 
             {course.isRetake ? (
-              <Select
-                value={course.previousGrade || "none"}
-                onValueChange={(v) => onChange({ ...course, previousGrade: v === "none" ? "" : v })}
-              >
-                <SelectTrigger className="h-8 text-xs border-dashed">
-                  <SelectValue placeholder="Previous Grade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Previous Grade</SelectItem>
-                  {GRADES.map((g) => (
-                    <SelectItem key={g.label} value={g.label}>
-                      {g.label} ({g.point.toFixed(2)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <GradeSelectorPopover
+                value={course.previousGrade}
+                score={course.previousScore}
+                placeholder="Previous Grade"
+                borderStyle="border-dashed"
+                onSelect={(previousGrade, previousScore) => onChange({ ...course, previousGrade, previousScore })}
+              />
             ) : (
               <div className="h-8 flex items-center text-xs text-muted-foreground px-2">—</div>
             )}

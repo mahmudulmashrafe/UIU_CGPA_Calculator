@@ -24,6 +24,7 @@ export interface Course {
   score?: number;
   isRetake: boolean;
   previousGrade: string;
+  previousScore?: number;
 }
 
 export interface Semester {
