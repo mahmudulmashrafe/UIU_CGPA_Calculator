@@ -102,7 +102,7 @@ const Index = () => {
 
           {/* Single Semester Tab */}
           <TabsContent value="single">
-            <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
               {/* Result Summary Box & Current Standing (Top on mobile, sticky sidebar on desktop) */}
               <div className="w-full lg:w-72 shrink-0 order-first lg:order-last space-y-4 lg:sticky lg:top-20 self-start">
                 <div className="flex justify-end -mb-2">
@@ -238,7 +238,7 @@ const Index = () => {
 
           {/* Future CGPA Tab */}
           <TabsContent value="future">
-            <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
               {/* Result Summary Box & Current Standing (Top on mobile, sticky sidebar on desktop) */}
               <div className="w-full lg:w-72 shrink-0 order-first lg:order-last space-y-4 lg:sticky lg:top-20 self-start">
                 <div className="flex justify-end -mb-2">
@@ -348,7 +348,7 @@ const Index = () => {
 
           {/* Full Calculator Tab */}
           <TabsContent value="full">
-            <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
               {/* Result Summary Box (Top on mobile, sidebar on desktop) */}
               <div className="w-full lg:w-72 shrink-0 order-first lg:order-last space-y-4 lg:sticky lg:top-20 self-start">
                 <div className="flex justify-end -mb-2">
