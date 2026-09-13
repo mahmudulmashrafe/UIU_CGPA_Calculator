@@ -116,10 +116,10 @@ export function CourseRow({ course, index, onChange, onRemove }: CourseRowProps)
                 onValueChange={(v) => onChange({ ...course, previousGrade: v === "none" ? "" : v })}
               >
                 <SelectTrigger className="h-8 text-xs border-dashed">
-                  <SelectValue placeholder="Prev Grade" />
+                  <SelectValue placeholder="Previous Grade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">--</SelectItem>
+                  <SelectItem value="none">Previous Grade</SelectItem>
                   {GRADES.map((g) => (
                     <SelectItem key={g.label} value={g.label}>
                       {g.label} ({g.point.toFixed(2)})
@@ -135,7 +135,7 @@ export function CourseRow({ course, index, onChange, onRemove }: CourseRowProps)
       </div>
 
       {/* Desktop View (>= md) */}
-      <div className="hidden md:grid md:grid-cols-[1fr_5rem_4.5rem_6rem_3.5rem_6.5rem_3.5rem_2rem] items-center gap-2 py-2 px-3 rounded-lg bg-background border border-border/60 hover:border-primary/30 transition-colors group">
+      <div className="hidden md:grid md:grid-cols-[1fr_5rem_4.5rem_6rem_4.5rem_8.5rem_3.5rem_2rem] items-center gap-2 py-2 px-3 rounded-lg bg-background border border-border/60 hover:border-primary/30 transition-colors group">
         <span className="text-xs font-semibold text-foreground">Course {index + 1}</span>
 
         <Select
@@ -199,10 +199,10 @@ export function CourseRow({ course, index, onChange, onRemove }: CourseRowProps)
             onValueChange={(v) => onChange({ ...course, previousGrade: v === "none" ? "" : v })}
           >
             <SelectTrigger className="h-8 text-xs border-dashed">
-              <SelectValue placeholder="Old grade" />
+              <SelectValue placeholder="Previous Grade" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">--</SelectItem>
+              <SelectItem value="none">Previous Grade</SelectItem>
               {GRADES.map((g) => (
                 <SelectItem key={g.label} value={g.label}>
                   {g.label} ({g.point.toFixed(2)})
