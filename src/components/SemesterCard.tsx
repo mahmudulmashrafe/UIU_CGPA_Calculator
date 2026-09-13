@@ -64,16 +64,18 @@ export function SemesterCard({ semester, onChange, onRemove, readOnlyName = fals
         </div>
       </CardHeader>
 
-      <CardContent className="p-3 space-y-2.5">
-        {semester.courses.map((course, i) => (
-          <CourseRow
-            key={course.id}
-            course={course}
-            index={i}
-            onChange={(c) => updateCourse(i, c)}
-            onRemove={() => removeCourse(i)}
-          />
-        ))}
+      <CardContent className="p-3 space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {semester.courses.map((course, i) => (
+            <CourseRow
+              key={course.id}
+              course={course}
+              index={i}
+              onChange={(c) => updateCourse(i, c)}
+              onRemove={() => removeCourse(i)}
+            />
+          ))}
+        </div>
 
         <Button variant="ghost" size="sm" className="w-full mt-2 text-muted-foreground hover:text-primary" onClick={addCourse}>
           <Plus className="h-3.5 w-3.5 mr-1" /> Add Course

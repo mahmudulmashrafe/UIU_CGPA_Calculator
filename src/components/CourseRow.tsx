@@ -40,8 +40,8 @@ export function CourseRow({ course, index, onChange, onRemove }: CourseRowProps)
         </Button>
       </div>
 
-      {/* Input Grid: 2-col on small screens, 4-col on medium/large screens */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs items-end">
+      {/* Input Grid: 2-col layout inside course card */}
+      <div className="grid grid-cols-2 gap-2.5 text-xs items-end">
         <div>
           <label className="text-[10px] font-medium text-muted-foreground block mb-1">Credit</label>
           <Select
